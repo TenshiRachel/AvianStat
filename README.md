@@ -17,7 +17,7 @@ Avian Stat is a data analytics application based on python that analyses plane c
 pip install -r requirements.txt
 
 # run app
-streamlit run app.py
+python Avian_Stats.py
 
 ```
 
