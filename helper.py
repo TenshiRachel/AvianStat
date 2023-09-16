@@ -8,8 +8,13 @@ def clean_graduate_data(data):
 
 
 def get_data(data, file_type):
+    excel_type = ['xls', 'xlsx']
+
     if file_type == "csv":
         data = pd.read_csv(data)
+
+    if file_type in excel_type:
+        data = pd.read_excel(data)
 
     return data
 
