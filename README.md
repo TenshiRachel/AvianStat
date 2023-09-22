@@ -2,7 +2,9 @@
 
 ### What is Avian Stat?
 
-Avian Stat is a data analytics application based on python that analyses plane crashes.
+Avian Stat is a data analytics application based on python that analyses graduate data.  
+The purpose of this application is to help students choose the institution and course based on
+this analysis.
 
 ### Other functions
 
@@ -23,4 +25,4 @@ python Avian_Stats.py
 
 ## Datasets used
 
-[planecrashinfo](https://www.planecrashinfo.com/database.htm)
+[Universities Graduate Employment Survey]()

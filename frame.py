@@ -1,6 +1,13 @@
-from tkinter import Frame, Toplevel, Menu, BOTH, END, Text, filedialog
+from tkinter import *
+from tkinter import filedialog, ttk
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg,
+    NavigationToolbar2Tk
+)
 from pandastable import Table
 from helper import clean_graduate_data, get_data
+from graphs.CourseBar import displayCourseBar
 import pandas as pd
 
 
@@ -33,6 +40,39 @@ class Window(Frame):
         data = pd.read_csv('./Universities Graduate Employment Survey.csv')
 
         data = clean_graduate_data(data)
+        data.head()
+        df = pd.DataFrame(data)
+
+        schools = data['Institution'].unique()
+        sv = StringVar()
+
+        # combo box for universities
+        comboBox = ttk.Combobox(self.parent, textvariable=sv)
+        comboBox['values'] = schools.tolist()
+        comboBox['state'] = 'readonly'
+        comboBox.current(0)
+        comboBox.pack()
+
+        # create a figure
+        figure = Figure(figsize=(10, 20), dpi=100)
+
+        # create FigureCanvasTkAgg object
+        figure_canvas = FigureCanvasTkAgg(figure)
+
+        # create the toolbar
+        NavigationToolbar2Tk(figure_canvas)
+
+        # create axes
+        axes = figure.add_subplot()
+
+        displayCourseBar(df, schools.tolist()[0], figure_canvas, axes)
+
+        def school_change(event):
+            displayCourseBar(df, sv.get(), figure_canvas, axes)
+
+        # execute plot change on school change
+        comboBox.bind('<<ComboboxSelected>>', school_change)
+
         pt = Table(frame)
         pt.model.df = data
 
@@ -40,8 +80,14 @@ class Window(Frame):
 
     def open_file(self):
         file_types = [('CSV files', '*.csv'), ('Excel files', '*.xls, xlsx')]
+
+        # open file dialog
         file_path = filedialog.askopenfilename(filetypes=file_types)
+
+        # get file name
         file_name = file_path.split('/')[-1]
+
+        # get file type
         uploaded_file_type = file_name.split('.')[1]
 
         data = get_data(file_path, uploaded_file_type)
@@ -53,6 +99,7 @@ class Window(Frame):
         pt.show()
 
     def drop_col(self):
+        # open new window
         drop_col_win = Toplevel(self.parent)
         drop_col_win.title('Drop columns')
         drop_col_win.geometry('300x500')
