@@ -1,10 +1,16 @@
 from tkinter import *
-from tkinter import filedialog, ttk
-from matplotlib.figure import Figure
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('TkAgg')
+
+
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg,
     NavigationToolbar2Tk
 )
+from matplotlib.figure import Figure
+from matplotlib.widgets import Slider
+from tkinter import filedialog, ttk
 from pandastable import Table
 from helper import clean_graduate_data, get_data
 from graphs.CourseBar import displayCourseBar
@@ -16,11 +22,16 @@ class Window(Frame):
         Frame.__init__(self, parent)
 
         self.parent = parent
+        self.bar_slider = None
         self.init_ui()
 
     def init_ui(self):
         self.parent.title('Avian Stat')
-        self.parent.geometry('1400x800')
+
+        width = self.parent.winfo_screenwidth()
+        height = self.parent.winfo_screenheight()
+
+        self.parent.geometry('%dx%d' % (width, height))
 
         menubar = Menu(self.parent)
         self.parent.config(menu=menubar)
@@ -43,6 +54,9 @@ class Window(Frame):
         data.head()
         df = pd.DataFrame(data)
 
+        scrollbar = Scrollbar(self.parent)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
         schools = data['Institution'].unique()
         sv = StringVar()
 
@@ -53,30 +67,28 @@ class Window(Frame):
         comboBox.current(0)
         comboBox.pack()
 
-        # create a figure
-        figure = Figure(figsize=(10, 20), dpi=100)
+        # create figure and axes
+        figure, axes = plt.subplots(figsize=(10, 6))
+        figure.subplots_adjust(bottom=0.3)
 
         # create FigureCanvasTkAgg object
-        figure_canvas = FigureCanvasTkAgg(figure)
+        figure_canvas = FigureCanvasTkAgg(figure, master=self.parent)
+
+        # pack graph into window
+        figure_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
         # create the toolbar
-        NavigationToolbar2Tk(figure_canvas)
+        NavigationToolbar2Tk(figure_canvas, self.parent)
 
-        # create axes
-        axes = figure.add_subplot()
-
-        displayCourseBar(df, schools.tolist()[0], figure_canvas, axes)
+        self.bar_slider = displayCourseBar(df, schools.tolist()[0], axes)
 
         def school_change(event):
-            displayCourseBar(df, sv.get(), figure_canvas, axes)
+            self.bar_slider = displayCourseBar(df, sv.get(), axes)
+
+            self.bar_slider.set_val(0)
 
         # execute plot change on school change
         comboBox.bind('<<ComboboxSelected>>', school_change)
-
-        pt = Table(frame)
-        pt.model.df = data
-
-        pt.show()
 
     def open_file(self):
         file_types = [('CSV files', '*.csv'), ('Excel files', '*.xls, xlsx')]
