@@ -1,63 +1,47 @@
 import matplotlib
-from matplotlib.widgets import Slider
+import matplotlib.pyplot as plt
 import numpy as np
 from helper import get_data_by_school
 
 
 matplotlib.use('TkAgg')
 
-# number of bars to display
-bars_displayed = 12
 
+def displayCourseBar(dataframe, school, course, axes):
+    # TODO: compare with other graph
+    sch_course_df = get_data_by_school(dataframe, school, other=course)
 
-def displayCourseBar(dataframe, school, axes):
-    sch_df = get_data_by_school(dataframe, school)
+    # Create pivot dataframe and drop NaN values from salaries
+    grouped_df = sch_course_df.groupby('Year of Survey')['Mean Salary'].apply(int).reset_index()
 
-    meanSalary = sch_df['Mean Salary']
-    years = sch_df['Year of Survey']
-    courses = sch_df['Qualification']
+    years = grouped_df['Year of Survey']
+    salaries = grouped_df['Mean Salary']
 
-    def update_bar_with_slider(pos):
-        # position of slider
-        pos = int(pos)
+    x_pos = np.arange(len(grouped_df))
+    bar_pos = []
+    width = 0.5  # Width of each individual bar
+    group_spacing = 0.2  # Adjust this value for spacing between groups
+    bar_colors = plt.cm.viridis(np.linspace(0, 1, len(years)))
 
-        # clear plot to display certain number of bars
-        axes.clear()
+    for i, (salary, year) in enumerate(zip(salaries, years)):
+        offset = width * (i - (len(years) - 1)/2)
 
-        if pos + bars_displayed > len(courses.unique()):
-            n = len(courses.unique()) - pos
+        # Store position of bars to position x ticks
+        bar_pos.append(x_pos[i] + offset)
 
-        else:
-            n = bars_displayed
+        axes.bar(x_pos[i] + offset, salary, width, label=str(year),
+                 color=bar_colors[i], align='center')
 
-        # slices the data according to position and num of bars to display and displays it
-        displayed_courses = courses[pos:pos+n]
-        displayed_salary = meanSalary[pos:pos+n]
+    # Set labels
+    axes.set_xlabel('Year')
+    axes.set_ylabel('Mean Salary')
 
-        # create the barchart
-        axes.bar(displayed_courses, np.asarray(displayed_salary, float),
-                 color='green', label='Mean Salary ($)', align='edge')
+    # Prevent x labels overlap
+    axes.set_xticks(bar_pos)
+    axes.set_xticklabels(years, rotation=30, ha='center')
 
-        # prevent overlap of labels
-        matplotlib.pyplot.setp(axes.get_xticklabels(), rotation=30, ha='center')
+    # Year legend
+    axes.legend(years, ncols=3)
 
-        # title of graph
-        axes.set_title('Salary over the years in different courses in ' + school)
-
-        # show graph legend
-        axes.legend()
-
-    slider_ax = matplotlib.pyplot.axes([0.18, 0.05, 0.55, 0.03], facecolor="skyblue")
-    slider = Slider(slider_ax, 'Courses', 0, len(courses.unique()) - bars_displayed, valinit=0,
-                    valstep=1, track_color='grey')
-
-    # update bar graph as slider is moved
-    slider.on_changed(update_bar_with_slider)
-
-    # hide slider value
-    slider.valtext.set_visible(False)
-
-    # start at pos 0 and init bar graph
-    update_bar_with_slider(0)
-
-    return slider
+    # Title of graph
+    axes.set_title('Salary over the years for %s in %s' % (course, school))

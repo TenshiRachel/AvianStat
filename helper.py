@@ -16,6 +16,7 @@ def clean_graduate_data(data):
 
     # remove 0 values
     cleaned_data = cleaned_data[~(cleaned_data['Employment Rate'] <= 0)]
+    cleaned_data.sort_values(by='Year of Survey', inplace=True)
 
     return cleaned_data
 
@@ -37,8 +38,11 @@ def get_data(data, file_type):
     return data
 
 
-def get_data_by_school(data, school):
-    result = data.loc[data['Institution'] == school]
+def get_data_by_school(data, school, other=''):
+    if other == '':
+        result = data.loc[data['Institution'] == school]
+    else:
+        result = data.loc[(data['Institution'] == school) & (data['Qualification'] == other)]
     return result
 
 

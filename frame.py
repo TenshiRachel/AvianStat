@@ -8,11 +8,9 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg,
     NavigationToolbar2Tk
 )
-from matplotlib.figure import Figure
-from matplotlib.widgets import Slider
 from tkinter import filedialog, ttk
 from pandastable import Table
-from helper import clean_graduate_data, get_data
+from helper import clean_graduate_data, get_data, get_data_by_school
 from graphs.CourseBar import displayCourseBar
 import pandas as pd
 
@@ -22,7 +20,7 @@ class Window(Frame):
         Frame.__init__(self, parent)
 
         self.parent = parent
-        self.bar_slider = None
+        self.course_combo = None
         self.init_ui()
 
     def init_ui(self):
@@ -57,15 +55,23 @@ class Window(Frame):
         scrollbar = Scrollbar(self.parent)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        schools = data['Institution'].unique()
-        sv = StringVar()
+        (Label(self.parent, text='Please select school and course to compare with', font=('Aerial', 14, 'bold'))
+         .pack(pady=15))
 
-        # combo box for universities
-        comboBox = ttk.Combobox(self.parent, textvariable=sv)
-        comboBox['values'] = schools.tolist()
-        comboBox['state'] = 'readonly'
-        comboBox.current(0)
-        comboBox.pack()
+        schools = data['Institution'].unique()
+
+        # Combo box for universities
+        school_combo = ttk.Combobox(self.parent, values=schools.tolist(), state='readonly')
+        school_combo.current(0)
+        school_combo.pack()
+
+        sch_df = get_data_by_school(df, schools.tolist()[0])
+
+        # Combobox for courses in the university
+        self.course_combo = ttk.Combobox(self.parent, values=sch_df['Qualification'].unique().tolist(),
+                                         state='readonly', width=70)
+        self.course_combo.current(0)
+        self.course_combo.pack()
 
         # create figure and axes
         figure, axes = plt.subplots(figsize=(10, 6))
@@ -80,15 +86,30 @@ class Window(Frame):
         # create the toolbar
         NavigationToolbar2Tk(figure_canvas, self.parent)
 
-        self.bar_slider = displayCourseBar(df, schools.tolist()[0], axes)
+        displayCourseBar(df, school_combo.get(), self.course_combo.get(), axes)
 
         def school_change(event):
-            self.bar_slider = displayCourseBar(df, sv.get(), axes)
+            selected_school = school_combo.get()
 
-            self.bar_slider.set_val(0)
+            sch_df_filter = get_data_by_school(df, selected_school)
+
+            # Set value of course combobox to qualifications of selected university
+            self.course_combo['values'] = sch_df_filter['Qualification'].unique().tolist()
+            selected_course = self.course_combo.get()
+
+            # Change to first course of changed university if university changes
+            if selected_course not in self.course_combo['values']:
+                selected_course = self.course_combo['values'][0]
+
+            # Set value of course combobox to first course value
+            self.course_combo.set(selected_course)
+            axes.clear()
+            displayCourseBar(df, selected_school, selected_course, axes)
+            figure_canvas.draw()
 
         # execute plot change on school change
-        comboBox.bind('<<ComboboxSelected>>', school_change)
+        school_combo.bind('<<ComboboxSelected>>', school_change)
+        self.course_combo.bind('<<ComboboxSelected>>', school_change)
 
     def open_file(self):
         file_types = [('CSV files', '*.csv'), ('Excel files', '*.xls, xlsx')]
