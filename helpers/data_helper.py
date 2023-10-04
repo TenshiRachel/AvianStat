@@ -4,15 +4,18 @@ import numpy as np
 
 def clean_graduate_data(data):
     cleaned_data = drop_columns(data, ['Sources'])
-    cleaned_data = rename_column(cleaned_data, 'Full-Time Permanent Employment Rate', 'Employment Rate')
-    cleaned_data = rename_column(cleaned_data, 'Gross Monthly Salary ($) Mean', 'Mean Salary')
-    cleaned_data = rename_column(cleaned_data, 'Gross Monthly Salary ($) Median', 'Median Salary')
-    cleaned_data = rename_column(cleaned_data, 'Gross Monthly Salary ($) 25th Percentile', '25th Percentile')
-    cleaned_data = rename_column(cleaned_data, 'Gross Monthly Salary ($) 75th Percentile', '75th Percentile')
-    cleaned_data['Mean Salary'] = cleaned_data['Mean Salary'].apply(remove_unwanted)
-    cleaned_data['Median Salary'] = cleaned_data['Median Salary'].apply(remove_unwanted)
-    cleaned_data['25th Percentile'] = cleaned_data['25th Percentile'].apply(remove_unwanted)
-    cleaned_data['75th Percentile'] = cleaned_data['75th Percentile'].apply(remove_unwanted)
+    renames = {'Full-Time Permanent Employment Rate': 'Employment Rate',
+               'Gross Monthly Salary ($) Mean': 'Mean Salary',
+               'Gross Monthly Salary ($) Median': 'Median Salary',
+               'Gross Monthly Salary ($) 25th Percentile': '25th Percentile',
+               'Gross Monthly Salary ($) 75th Percentile': '75th Percentile'}
+
+    # Rename columns to simpler names
+    cleaned_data.rename(columns=renames, inplace=True)
+
+    # Convert digit related columns to float type
+    cleaned_data[['Mean Salary', 'Median Salary', '25th Percentile', '75th Percentile']] = (
+        cleaned_data[['Mean Salary', 'Median Salary', '25th Percentile', '75th Percentile']].applymap(convert_to_float))
 
     # remove 0 values
     cleaned_data = cleaned_data[~(cleaned_data['Employment Rate'] <= 0)]
@@ -21,9 +24,9 @@ def clean_graduate_data(data):
     return cleaned_data
 
 
-def remove_unwanted(s):
+def convert_to_float(s):
     s = s.replace('$', '')
-    return s.replace(',', '')
+    return float(s.replace(',', ''))
 
 
 def get_data(data, file_type):

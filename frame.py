@@ -1,16 +1,10 @@
 from tkinter import *
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
-
-
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg,
-    NavigationToolbar2Tk
-)
-from tkinter import filedialog, ttk
+from tkinter import filedialog
 from pandastable import Table
-from helper import clean_graduate_data, get_data, get_data_by_school
+from helpers.data_helper import clean_graduate_data, get_data, get_data_by_school
+from helpers.ui_helper import create_combobox, create_figure_canvas
 from graphs.CourseBar import displayCourseBar
 import pandas as pd
 
@@ -20,7 +14,6 @@ class Window(Frame):
         Frame.__init__(self, parent)
 
         self.parent = parent
-        self.course_combo = None
         self.init_ui()
 
     def init_ui(self):
@@ -43,8 +36,11 @@ class Window(Frame):
         edit_menu.add_command(label='Drop columns', command=self.drop_col)
         menubar.add_cascade(menu=edit_menu, label='Edit')
 
-        frame = Frame(self.parent)
-        frame.pack(fill=BOTH, expand=1)
+        top_frame = Frame(self.parent, height=30)
+        top_frame.pack(fill=BOTH, pady=50)
+
+        graph_frame = Frame(self.parent)
+        graph_frame.pack(fill=BOTH)
 
         data = pd.read_csv('./Universities Graduate Employment Survey.csv')
 
@@ -55,61 +51,69 @@ class Window(Frame):
         scrollbar = Scrollbar(self.parent)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        (Label(self.parent, text='Please select school and course to compare with', font=('Aerial', 14, 'bold'))
-         .pack(pady=15))
+        (Label(top_frame, text='Please select school and course to compare with', font=('Aerial', 20, 'bold'))
+         .pack(pady=25))
 
-        schools = data['Institution'].unique()
+        schools = data['Institution'].unique().tolist()
 
         # Combo box for universities
-        school_combo = ttk.Combobox(self.parent, values=schools.tolist(), state='readonly')
-        school_combo.current(0)
-        school_combo.pack()
+        school_combo = create_combobox(top_frame, schools, 'readonly')
+        school_combo.pack(side=LEFT, padx=(100, 50))
 
-        sch_df = get_data_by_school(df, schools.tolist()[0])
+        compared_school_combo = create_combobox(top_frame, schools, 'readonly')
+        compared_school_combo.pack(side=RIGHT, padx=(50, 100))
+
+        sch_df = get_data_by_school(df, schools[0])
 
         # Combobox for courses in the university
-        self.course_combo = ttk.Combobox(self.parent, values=sch_df['Qualification'].unique().tolist(),
-                                         state='readonly', width=70)
-        self.course_combo.current(0)
-        self.course_combo.pack()
+        self.course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 'readonly',
+                                            70)
+        self.course_combo.pack(side=LEFT, padx=(0, 20))
 
-        # create figure and axes
-        figure, axes = plt.subplots(figsize=(10, 6))
-        figure.subplots_adjust(bottom=0.3)
+        self.compared_course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
+                                                     'readonly', 70)
+        self.compared_course_combo.pack(side=RIGHT, padx=(20, 0))
 
-        # create FigureCanvasTkAgg object
-        figure_canvas = FigureCanvasTkAgg(figure, master=self.parent)
+        figure, axes, figure_canvas = create_figure_canvas((10, 6), self.parent)
 
         # pack graph into window
-        figure_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
-        # create the toolbar
-        NavigationToolbar2Tk(figure_canvas, self.parent)
-
-        displayCourseBar(df, school_combo.get(), self.course_combo.get(), axes)
+        displayCourseBar(df, school_combo.get(), self.course_combo.get(), compared_school_combo.get(),
+                         self.compared_course_combo.get(), axes)
 
         def school_change(event):
             selected_school = school_combo.get()
+            selected_comparison = compared_school_combo.get()
 
             sch_df_filter = get_data_by_school(df, selected_school)
+            compared_df = get_data_by_school(df, selected_comparison)
 
             # Set value of course combobox to qualifications of selected university
             self.course_combo['values'] = sch_df_filter['Qualification'].unique().tolist()
             selected_course = self.course_combo.get()
+            self.compared_course_combo['values'] = compared_df['Qualification'].unique().tolist()
+            selected_compared_course = self.compared_course_combo.get()
 
             # Change to first course of changed university if university changes
             if selected_course not in self.course_combo['values']:
                 selected_course = self.course_combo['values'][0]
+            if selected_compared_course not in self.compared_course_combo['values']:
+                selected_compared_course = self.compared_course_combo['values'][0]
 
             # Set value of course combobox to first course value
             self.course_combo.set(selected_course)
+            self.compared_course_combo.set(selected_compared_course)
+
             axes.clear()
-            displayCourseBar(df, selected_school, selected_course, axes)
+            displayCourseBar(df, selected_school, selected_course, selected_comparison, selected_compared_course, axes)
             figure_canvas.draw()
 
         # execute plot change on school change
         school_combo.bind('<<ComboboxSelected>>', school_change)
+        compared_school_combo.bind('<<ComboboxSelected>>', school_change)
         self.course_combo.bind('<<ComboboxSelected>>', school_change)
+        self.compared_course_combo.bind('<<ComboboxSelected>>', school_change)
 
     def open_file(self):
         file_types = [('CSV files', '*.csv'), ('Excel files', '*.xls, xlsx')]
