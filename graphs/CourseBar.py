@@ -9,7 +9,7 @@ matplotlib.use('TkAgg')
 
 
 def displayCourseBar(dataframe, school, course, other_school, other_course, axes):
-    # TODO: Annotate bars with salary and no data if value is 0
+    # TODO: Adjust legend to show range of color
     sch_course_df = get_data_by_school(dataframe, school, other=course)
     compared_df = get_data_by_school(dataframe, other_school, other=other_course)
 
@@ -52,12 +52,24 @@ def displayCourseBar(dataframe, school, course, other_school, other_course, axes
         # Store position of grouped bars to position x ticks
         bar_pos.append((x_pos[i]*2 + offset + compared_offset)/2)
 
-        axes.bar(x_pos[i] + offset, salary, width, label='%s - %s' % (school, course) if i == 0 else '',
-                 color=bar_colors[i], align='center')
+        bar = axes.bar(x_pos[i] + offset, salary, width, label='%s - %s' % (school, course) if i == 0 else '',
+                       color=bar_colors[i], align='center')
 
-        axes.bar(x_pos[i] + compared_offset, compared_salary, width,
-                 label='%s - %s' % (other_school, other_course) if i == 0 else '',
-                 color=compared_bar_colors[i], align='center')
+        axes.bar_label(bar, fmt='{:,.0f}', padding=3)
+
+        bar = axes.bar(x_pos[i] + compared_offset, compared_salary, width,
+                       label='%s - %s' % (other_school, other_course) if i == 0 else '',
+                       color=compared_bar_colors[i], align='center')
+
+        axes.bar_label(bar, fmt='{:,.0f}', padding=3)
+
+    # Get annotations
+    annotations = [child for child in axes.get_children() if isinstance(child, matplotlib.text.Annotation)]
+    for anon in annotations:
+        obj = anon.findobj(matplotlib.text.Text)[0]
+        # Replace 0s with No data
+        if obj.get_text() == '0':
+            obj.set_text('No\ndata')
 
     # Set labels
     axes.set_xlabel('Year')
@@ -68,7 +80,7 @@ def displayCourseBar(dataframe, school, course, other_school, other_course, axes
     axes.set_xticklabels(all_years, rotation=30, ha='center')
 
     # Legend to show what school and course
-    axes.legend()
+    axes.legend(loc='upper left')
 
     # Title of graph
     axes.set_title('\n'.join(wrap('Comparison of salary over the years between %s in %s and %s in %s', 50)) %

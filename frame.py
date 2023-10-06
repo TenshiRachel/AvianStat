@@ -109,7 +109,7 @@ class Window(Frame):
             displayCourseBar(df, selected_school, selected_course, selected_comparison, selected_compared_course, axes)
             figure_canvas.draw()
 
-        # execute plot change on school change
+        # Change bars when school or course change
         school_combo.bind('<<ComboboxSelected>>', school_change)
         compared_school_combo.bind('<<ComboboxSelected>>', school_change)
         self.course_combo.bind('<<ComboboxSelected>>', school_change)
