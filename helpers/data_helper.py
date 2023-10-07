@@ -50,7 +50,7 @@ def get_data_by_school(data, school, other=''):
 
 
 def drop_columns(data, columns):
-    data = data.drop(columns, axis=1)
+    data = data.drop(columns=columns, axis=1)
     return data
 
 

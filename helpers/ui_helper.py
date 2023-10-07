@@ -22,6 +22,6 @@ def create_figure_canvas(fig_size, master):
     figure_canvas = FigureCanvasTkAgg(figure, master=master)
 
     # create the toolbar
-    NavigationToolbar2Tk(figure_canvas, master)
+    # NavigationToolbar2Tk(figure_canvas, master)
 
     return figure, axes, figure_canvas
