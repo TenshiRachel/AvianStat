@@ -54,8 +54,8 @@ def drop_columns(data, columns):
     return data
 
 
-def rename_column(data, column, name):
-    data = data.rename(columns={column:name})
+def rename_column(data, renames):
+    data = data.rename(columns=renames, inplace=True)
     return data
 
 

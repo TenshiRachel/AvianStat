@@ -1,10 +1,15 @@
 from tkinter import *
+from tkinter import filedialog
+from tkinter.font import nametofont, Font
+
+import ttkbootstrap as ttkb
+from ttkbootstrap.constants import *
+
 import matplotlib
 matplotlib.use('TkAgg')
-from tkinter import filedialog
 from pandastable import Table
-from helpers.data_helper import clean_graduate_data, get_data, get_data_by_school, drop_columns
-from helpers.ui_helper import create_combobox, create_figure_canvas
+from helpers.data_helper import clean_graduate_data, get_data, get_data_by_school, drop_columns, rename_column
+from helpers.ui_helper import create_combobox, create_figure_canvas, show_toast
 from graphs.CourseBar import displayCourseBar
 from graphs.salaryPieChart import display_salary_pie
 import pandas as pd
@@ -15,6 +20,8 @@ class Window(Frame):
         Frame.__init__(self, parent)
 
         self.parent = parent
+        # Default font for menu items
+        self.menu_font = Font(family='Arial', size=14)
         self.view_data_win = None
         self.users_data = None
         self.data_table = None
@@ -29,16 +36,15 @@ class Window(Frame):
         self.parent.geometry('%dx%d' % (width, height))
         self.parent.state('zoomed')
 
+        # Default font for widgets
+        nametofont('TkDefaultFont').configure(size=16)
+
         menubar = Menu(self.parent)
         self.parent.config(menu=menubar)
 
         file_menu = Menu(menubar)
-        file_menu.add_command(label='Open...', command=self.open_file)
-        file_menu.add_command(label='Save as')
+        file_menu.add_command(label='Open...', command=self.open_file, font=self.menu_font)
         menubar.add_cascade(menu=file_menu, label='File')
-
-        graph_frame = Frame(self.parent)
-        graph_frame.pack(fill=BOTH)
 
         data = pd.read_csv('./Universities Graduate Employment Survey.csv')
 
@@ -149,7 +155,8 @@ class Window(Frame):
             self.compared_course_combo.set(selected_compared_course)
 
             bar_axes.clear()
-            displayCourseBar(df, selected_school, selected_course, selected_comparison, selected_compared_course, bar_axes)
+            displayCourseBar(df, selected_school, selected_course, selected_comparison, selected_compared_course,
+                             bar_axes)
             bar_figure_canvas.draw()
 
         # Change bars when school or course change
@@ -185,12 +192,19 @@ class Window(Frame):
         self.view_data_win.config(menu=menubar)
 
         file_menu = Menu(menubar)
-        file_menu.add_command(label='Save as')
-        file_menu.add_command(label='Close', command=self.view_data_win.destroy)
+        file_menu.add_command(label='Save as', font=self.menu_font)
+        file_menu.add_command(label='Close', command=self.view_data_win.destroy, font=self.menu_font)
         menubar.add_cascade(menu=file_menu, label='File')
 
         edit_menu = Menu(menubar)
-        edit_menu.add_command(label='Drop columns', command=self.drop_col)
+        edit_menu.add_command(label='Drop columns', command=self.drop_col, font=self.menu_font)
+        edit_menu.add_command(label='Rename columns', command=self.rename_col, font=self.menu_font)
+
+        handling_menu = Menu(edit_menu)
+        edit_menu.add_cascade(menu=handling_menu, label='Handle missing values', font=self.menu_font)
+        handling_menu.add_command(label='Fill missing values', font=self.menu_font)
+        handling_menu.add_command(label='Drop missing value rows', font=self.menu_font)
+
         menubar.add_cascade(menu=edit_menu, label='Edit')
 
         frame = Frame(self.view_data_win)
@@ -205,22 +219,40 @@ class Window(Frame):
         # Create new window for dropping columns
         drop_col_win = Toplevel(self.view_data_win)
         drop_col_win.title('Drop columns')
-        drop_col_win.geometry('300x700')
+        drop_col_win.geometry('500x500')
 
         drop_col_win.resizable(False, False)
 
-        frame = LabelFrame(drop_col_win, text="Select columns to drop", padx=20, pady=20, font='Arial 16')
-        frame.pack(pady=20, padx=10)
+        canvas = Canvas(drop_col_win)
+        canvas.pack(fill=BOTH, expand=True)
+
+        # Make canvas scrollable based on content
+        scrollbar = Scrollbar(canvas, orient=VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        frame = Frame(canvas)
+        frame.pack(fill=BOTH, expand=True)
+
+        canvas.create_window((0, 0), window=frame, anchor=NW)
+
+        label_frame = LabelFrame(frame, text="Select columns to drop")
+        label_frame.pack(fill=BOTH, expand=True, padx=20, pady=(20, 60))
 
         checkbox_vars = []
 
         # Create checkboxes based on column names
         for col in self.users_data.columns:
             var = IntVar()
-            checkbox = Checkbutton(frame, text=col, anchor='w', width=200, font='Arial 16',
+            checkbox = Checkbutton(label_frame, text=col, anchor='w', width=20,
                                    variable=var)
             checkbox_vars.append((var, col))
             checkbox.pack()
+
+        # Update content on scoll
+        label_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox('all'))
 
         def drop():
             cols_to_drop = []
@@ -237,6 +269,67 @@ class Window(Frame):
 
             # Close the drop col window
             drop_col_win.destroy()
+            show_toast('Column(s) dropped successfully!', SUCCESS)
 
-        drop_button = Button(frame, text='Drop columns', font='Arial 16', command=drop)
-        drop_button.pack(fill=X)
+        drop_button = ttkb.Button(label_frame, text='Drop columns', command=drop, bootstyle=SUCCESS)
+        drop_button.pack(fill=X, pady=10)
+
+    def rename_col(self):
+        # Create new window for renaming columns
+        rename_col_win = Toplevel(self.view_data_win)
+        rename_col_win.title('Rename columns')
+        rename_col_win.geometry('500x500')
+
+        rename_col_win.resizable(False, False)
+
+        canvas = Canvas(rename_col_win)
+        canvas.pack(fill=BOTH, expand=True)
+
+        scrollbar = Scrollbar(canvas, orient=VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        frame = Frame(canvas)
+        frame.pack(fill=BOTH, expand=True)
+
+        canvas.create_window((0, 0), window=frame, anchor=NW)
+
+        label_frame = LabelFrame(frame, text="Rename columns", padx=20)
+        label_frame.pack(fill=BOTH, expand=True, pady=(20, 60), padx=10)
+
+        entries = []
+
+        for col in self.users_data.columns:
+            textbox = Entry(label_frame, font='Arial 16')
+            # Insert column names as values in textbox
+            textbox.delete(0, END)
+            textbox.insert(0, col)
+
+            textbox.pack(pady=15)
+            # Store entries to retrieve values later
+            entries.append(textbox)
+
+        label_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox('all'))
+
+        def rename():
+            renames = {}
+            # Create renames dict based on entries
+            for i, entry in enumerate(entries):
+                renames[self.users_data.columns[i]] = entry.get()
+
+            # Check for blank entries
+            if '' in renames.values():
+                show_toast('No blanks are allowed', DANGER)
+
+            else:
+                # Rename the columns and update the table
+                self.users_data = rename_column(self.users_data, renames)
+                self.refresh_table()
+
+                rename_col_win.destroy()
+                show_toast('Column(s) renamed successfully!', SUCCESS)
+
+        rename_button = ttkb.Button(label_frame, text='Rename columns', command=rename, bootstyle=SUCCESS)
+        rename_button.pack(fill=X, pady=10)

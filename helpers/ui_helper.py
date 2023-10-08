@@ -1,4 +1,7 @@
 from tkinter import ttk
+from ttkbootstrap.constants import *
+from ttkbootstrap.toast import ToastNotification
+
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg,
     NavigationToolbar2Tk
@@ -25,3 +28,13 @@ def create_figure_canvas(fig_size, master):
     # NavigationToolbar2Tk(figure_canvas, master)
 
     return figure, axes, figure_canvas
+
+
+def show_toast(msg, style):
+    title = 'Success'
+
+    if style == DANGER:
+        title = 'Error'
+
+    toast = ToastNotification(title=title, message=msg, position=(200, 10, 'ne'), duration=3000, bootstyle=style)
+    toast.show_toast()
