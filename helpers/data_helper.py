@@ -38,7 +38,9 @@ def get_data(data, file_type):
     if file_type in excel_type:
         data = pd.read_excel(data)
 
-    return data
+    data_with_nan = data.mask(data == '')
+
+    return data_with_nan
 
 
 def get_data_by_school(data, school, other=''):
@@ -59,9 +61,12 @@ def rename_column(data, renames):
     return data
 
 
-def handle_missing_vals(data, fill=''):
+def handle_missing_vals(data, fill='', any_col=True):
     if fill == '':
-        data = data.dropna(how='all')
+        if any_col:
+            data = data.dropna(how='any')
+        else:
+            data = data.dropna(how='all')
 
     else:
         data = data.fillna(fill)

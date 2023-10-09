@@ -8,7 +8,8 @@ from ttkbootstrap.constants import *
 import matplotlib
 matplotlib.use('TkAgg')
 from pandastable import Table
-from helpers.data_helper import clean_graduate_data, get_data, get_data_by_school, drop_columns, rename_column
+from helpers.data_helper import (clean_graduate_data, get_data, get_data_by_school, drop_columns, rename_column,
+                                 handle_missing_vals)
 from helpers.ui_helper import create_combobox, create_figure_canvas, show_toast
 from graphs.CourseBar import displayCourseBar
 from graphs.salaryPieChart import display_salary_pie
@@ -202,8 +203,8 @@ class Window(Frame):
 
         handling_menu = Menu(edit_menu)
         edit_menu.add_cascade(menu=handling_menu, label='Handle missing values', font=self.menu_font)
-        handling_menu.add_command(label='Fill missing values', font=self.menu_font)
-        handling_menu.add_command(label='Drop missing value rows', font=self.menu_font)
+        handling_menu.add_command(label='Fill null values', command=self.fill_na, font=self.menu_font)
+        handling_menu.add_command(label='Drop null value rows', command=self.drop_na, font=self.menu_font)
 
         menubar.add_cascade(menu=edit_menu, label='Edit')
 
@@ -267,9 +268,12 @@ class Window(Frame):
                 self.users_data = drop_columns(self.users_data, cols_to_drop)
                 self.refresh_table()
 
-            # Close the drop col window
-            drop_col_win.destroy()
-            show_toast('Column(s) dropped successfully!', SUCCESS)
+                # Close the drop col window
+                drop_col_win.destroy()
+                show_toast('Column(s) dropped successfully!', SUCCESS)
+
+            else:
+                show_toast('At least one column must be selected', DANGER)
 
         drop_button = ttkb.Button(label_frame, text='Drop columns', command=drop, bootstyle=SUCCESS)
         drop_button.pack(fill=X, pady=10)
@@ -333,3 +337,71 @@ class Window(Frame):
 
         rename_button = ttkb.Button(label_frame, text='Rename columns', command=rename, bootstyle=SUCCESS)
         rename_button.pack(fill=X, pady=10)
+
+    def fill_na(self):
+        # Create new window for filling na columns
+        fill_na_win = Toplevel(self.view_data_win)
+        fill_na_win.title('Fill null values')
+        fill_na_win.geometry('400x200')
+
+        fill_na_win.resizable(False, False)
+
+        # Let user enter value they want to replace null with
+        label_frame = LabelFrame(fill_na_win, text="Enter value to fill nulls", padx=20)
+        label_frame.pack(fill=BOTH, expand=True, pady=20, padx=10)
+
+        textbox = Entry(label_frame, font='Arial 16')
+        textbox.pack(pady=10)
+
+        def fill():
+            # Get value of textbox
+            fill_value = textbox.get()
+
+            # Check for blank entry
+            if fill_value != '':
+                self.users_data = handle_missing_vals(self.users_data, fill_value)
+                self.refresh_table()
+
+                fill_na_win.destroy()
+                show_toast('Null values filled!', SUCCESS)
+
+            else:
+                show_toast('Please enter a value!', DANGER)
+
+        fill_button = ttkb.Button(label_frame, text='Fill null values', command=fill, bootstyle=SUCCESS)
+        fill_button.pack(fill=X, pady=10)
+
+    def drop_na(self):
+        # Create new window for filling na columns
+        drop_na_win = Toplevel(self.view_data_win)
+        drop_na_win.title('Drop null values')
+        drop_na_win.geometry('450x300')
+
+        drop_na_win.resizable(False, False)
+
+        label_frame = LabelFrame(drop_na_win, text="Select method of dropping", padx=20)
+        label_frame.pack(fill=BOTH, expand=True, pady=20, padx=10)
+
+        radio = IntVar()
+
+        # Let user choose between methods
+        any_radio = ttkb.Radiobutton(label_frame, text='Drop rows where any value is null', variable=radio, value=0)
+        all_radio = ttkb.Radiobutton(label_frame, text='Drop rows where all values are null', variable=radio, value=1)
+
+        any_radio.pack(pady=10, anchor=W)
+        all_radio.pack(pady=10, anchor=W)
+
+        def drop():
+            # Check user choice and drop according to it
+            if not radio.get():
+                self.users_data = handle_missing_vals(self.users_data)
+            else:
+                self.users_data = handle_missing_vals(self.users_data, any_col=False)
+
+            self.refresh_table()
+
+            drop_na_win.destroy()
+            show_toast('Rows with null dropped', SUCCESS)
+
+        drop_button = ttkb.Button(label_frame, text='Drop null values', command=drop, bootstyle=SUCCESS)
+        drop_button.pack(fill=X, pady=10)
