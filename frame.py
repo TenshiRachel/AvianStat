@@ -14,7 +14,7 @@ from helpers.ui_helper import create_combobox, create_figure_canvas, show_toast
 from graphs.CourseBar import displayCourseBar
 from graphs.salaryPieChart import display_salary_pie
 import pandas as pd
-
+from graphs.EmploymentLine import Display_line_graph
 
 class Window(Frame):
     def __init__(self, parent):
@@ -174,6 +174,35 @@ class Window(Frame):
         compared_school_combo.bind('<<ComboboxSelected>>', school_change)
         self.course_combo.bind('<<ComboboxSelected>>', school_change)
         self.compared_course_combo.bind('<<ComboboxSelected>>', school_change)
+
+        self.courseline_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
+                                                'readonly', 70)
+        sch_line_combo = create_combobox(top_frame, schools, 'readonly')
+
+        sch_line_combo.pack()
+        self.courseline_combo.pack()
+        line_figure, line_axes, line_figure_canvas = create_figure_canvas(master=top_frame, fig_size=(10, 6))
+        # pack graph
+        line_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+        Display_line_graph(df, school_combo.get(), self.courseline_combo.get() ,line_axes)
+
+        def line_chg(event):
+            sch_linedata = sch_line_combo.get()
+
+            sch_line = get_data_by_school(df, sch_linedata)
+            self.courseline_combo['values'] = sch_line['Qualification'].unique().tolist()
+            selected_course = self.courseline_combo.get()
+
+            if selected_course not in self.courseline_combo['values']:
+                selected_course = self.courseline_combo['values'][0]
+            self.courseline_combo.set(selected_course)
+
+            line_axes.clear()
+            Display_line_graph(df, sch_linedata, selected_course, line_axes)
+            line_figure_canvas.draw()
+
+        self.courseline_combo.bind('<<ComboboxSelected>>', line_chg)
+        sch_line_combo.bind('<<ComboboxSelected>>', line_chg)
 
         top_frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox('all'))
