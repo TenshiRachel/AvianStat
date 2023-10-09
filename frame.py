@@ -38,7 +38,7 @@ class Window(Frame):
         self.parent.state('zoomed')
 
         # Default font for widgets
-        nametofont('TkDefaultFont').configure(size=16)
+        nametofont('TkDefaultFont').configure(size=20)
 
         menubar = Menu(self.parent)
         self.parent.config(menu=menubar)
@@ -53,27 +53,35 @@ class Window(Frame):
         data.head()
         df = pd.DataFrame(data)
 
-        scrollbar = Scrollbar(self.parent)
+        canvas = Canvas(self.parent)
+        canvas.pack(fill=BOTH, expand=True)
+
+        # Make canvas scrollable based on content
+        scrollbar = ttkb.Scrollbar(canvas, orient=VERTICAL, command=canvas.yview, bootstyle='info-round')
         scrollbar.pack(side=RIGHT, fill=Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
 
         schools = data['Institution'].unique().tolist()
 
-        top_frame = Frame(self.parent)
+        top_frame = Frame(canvas)
         top_frame.pack(fill=BOTH)
 
-        Label(top_frame, text="Select an institution: ", font=("Arial", 16)).pack()
+        canvas.create_window((0, 0), window=top_frame, anchor=NW)
+
+        Label(top_frame, text="Select an institution: ").pack()
 
         school_combo = create_combobox(top_frame, schools, 'readonly')
         school_combo.pack()
 
         sch_df = get_data_by_school(df, schools[0])
 
-        Label(top_frame, text="Select a year: ", font=("Arial", 16)).pack()
+        Label(top_frame, text="Select a year: ").pack()
 
         self.year_combo = create_combobox(top_frame, sch_df['Year of Survey'].unique().tolist(), 'readonly')
         self.year_combo.pack()
 
-        pie_figure, pie_axes, pie_figure_canvas = create_figure_canvas((16, 8), self.parent)
+        pie_figure, pie_axes, pie_figure_canvas = create_figure_canvas(top_frame)
 
         # pack graph into window
         pie_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
@@ -100,31 +108,32 @@ class Window(Frame):
         school_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.year_combo.bind('<<ComboboxSelected>>', pie_school_change)
 
-        top_frame = Frame(self.parent, height=30)
-        top_frame.pack(fill=BOTH, pady=50)
+        (Label(top_frame, text='Comparison of trend of different school courses mean salary',
+               font=('Arial', 24, 'bold')).pack(pady=10))
 
-        (Label(top_frame, text='Please select school and course to compare with', font=('Aerial', 20, 'bold'))
-         .pack(pady=25))
+        Label(top_frame, text='Select a school and course').pack(pady=10)
+
+        sch_df = get_data_by_school(df, schools[0])
 
         # Combo box for universities
         school_combo = create_combobox(top_frame, schools, 'readonly')
-        school_combo.pack(side=LEFT, padx=(100, 50))
-
-        compared_school_combo = create_combobox(top_frame, schools, 'readonly')
-        compared_school_combo.pack(side=RIGHT, padx=(50, 100))
-
-        sch_df = get_data_by_school(df, schools[0])
+        school_combo.pack(pady=10)
 
         # Combobox for courses in the university
         self.course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 'readonly',
                                             70)
-        self.course_combo.pack(side=LEFT, padx=(0, 20))
+        self.course_combo.pack(pady=10)
+
+        Label(top_frame, text='Compare with: ').pack(pady=10)
+
+        compared_school_combo = create_combobox(top_frame, schools, 'readonly')
+        compared_school_combo.pack(pady=10)
 
         self.compared_course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
                                                      'readonly', 70)
-        self.compared_course_combo.pack(side=RIGHT, padx=(20, 0))
+        self.compared_course_combo.pack(pady=10)
 
-        bar_figure, bar_axes, bar_figure_canvas = create_figure_canvas((10, 6), self.parent)
+        bar_figure, bar_axes, bar_figure_canvas = create_figure_canvas(top_frame)
 
         # pack graph into window
         bar_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
@@ -166,6 +175,9 @@ class Window(Frame):
         self.course_combo.bind('<<ComboboxSelected>>', school_change)
         self.compared_course_combo.bind('<<ComboboxSelected>>', school_change)
 
+        top_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox('all'))
+
     def refresh_table(self):
         # Redraw table on change
         self.data_table.model.df = self.users_data
@@ -206,14 +218,22 @@ class Window(Frame):
         handling_menu.add_command(label='Fill null values', command=self.fill_na, font=self.menu_font)
         handling_menu.add_command(label='Drop null value rows', command=self.drop_na, font=self.menu_font)
 
+        view_menu = Menu(menubar)
+        view_menu.add_command(label='Search', font=self.menu_font)
+        menubar.add_cascade(menu=view_menu, label='View')
+
         menubar.add_cascade(menu=edit_menu, label='Edit')
 
         frame = Frame(self.view_data_win)
-        frame.pack(fill=BOTH, expand=1)
+        frame.pack(fill=BOTH, expand=True)
 
         # Display data with pandastable
         self.data_table = Table(frame)
         self.data_table.model.df = self.users_data
+        self.data_table.cell_font = ('Arial', 20)
+        self.data_table.floatprecision = 0
+        self.data_table.rowheight = 40
+
         self.data_table.show()
 
     def drop_col(self):
@@ -392,6 +412,7 @@ class Window(Frame):
         all_radio.pack(pady=10, anchor=W)
 
         def drop():
+            original_rows = self.users_data.shape[0]
             # Check user choice and drop according to it
             if not radio.get():
                 self.users_data = handle_missing_vals(self.users_data)
@@ -401,7 +422,7 @@ class Window(Frame):
             self.refresh_table()
 
             drop_na_win.destroy()
-            show_toast('Rows with null dropped', SUCCESS)
+            show_toast('%s rows with null dropped' % str(original_rows - self.users_data.shape[0]), SUCCESS)
 
         drop_button = ttkb.Button(label_frame, text='Drop null values', command=drop, bootstyle=SUCCESS)
         drop_button.pack(fill=X, pady=10)

@@ -16,7 +16,7 @@ def create_combobox(root, values, state, width=20):
     return combo_box
 
 
-def create_figure_canvas(fig_size, master):
+def create_figure_canvas(master, fig_size=(16, 8)):
     # create figure and axes
     figure, axes = plt.subplots(figsize=fig_size)
     figure.subplots_adjust(bottom=0.3)
