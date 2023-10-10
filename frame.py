@@ -16,6 +16,7 @@ from graphs.salaryPieChart import display_salary_pie
 from graphs.EmploymentLine import display_emp_line
 import pandas as pd
 
+import os
 
 class Window(Frame):
     def __init__(self, parent):
@@ -240,7 +241,7 @@ class Window(Frame):
         self.view_data_win.config(menu=menubar)
 
         file_menu = Menu(menubar)
-        file_menu.add_command(label='Save as', font=self.menu_font)
+        file_menu.add_command(label='Save as', font=self.menu_font, command=self.save_as_file)
         file_menu.add_command(label='Close', command=self.view_data_win.destroy, font=self.menu_font)
         menubar.add_cascade(menu=file_menu, label='File')
 
@@ -271,6 +272,17 @@ class Window(Frame):
 
         self.data_table.show()
 
+    def save_as_file(self):
+        file_types = [('CSV files', '*.csv')]
+        file_path = filedialog.asksaveasfilename(filetypes=file_types, defaultextension=".csv")
+
+        if file_path:
+            try:
+                self.users_data.to_csv(file_path, index=False)
+                file_name = os.path.basename(file_path)  # Get just the file name without path
+                show_toast(f"{file_name} has been saved", SUCCESS)
+            except Exception as e:
+                show_toast(f"Error saving data: {str(e)}", DANGER)
     def drop_col(self):
         # Create new window for dropping columns
         drop_col_win = Toplevel(self.view_data_win)
