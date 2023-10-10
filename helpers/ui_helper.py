@@ -9,7 +9,7 @@ from matplotlib.backends.backend_tkagg import (
 import matplotlib.pyplot as plt
 
 
-def create_combobox(root, values, state, width=20):
+def create_combobox(root, values, width=20, state='readonly'):
     combo_box = ttk.Combobox(root, values=values, state=state, width=width, font='Arial 16')
     combo_box.current(0)
 

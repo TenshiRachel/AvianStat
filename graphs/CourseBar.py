@@ -72,8 +72,8 @@ def displayCourseBar(dataframe, school, course, other_school, other_course, axes
             obj.set_text('No\ndata')
 
     # Set labels
-    axes.set_xlabel('Year')
-    axes.set_ylabel('Mean Salary')
+    axes.set_xlabel('Year', fontsize=14)
+    axes.set_ylabel('Mean Salary', fontsize=14)
 
     # Prevent x labels overlap
     axes.set_xticks(bar_pos)

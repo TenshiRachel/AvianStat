@@ -11,8 +11,8 @@ def display_emp_line(df, school, course, axes):
     year = [int(i) for i in year]
     employ = course_data['Employment Rate']
 
-    axes.set_ylabel('Employment Rate')
-    axes.set_xlabel('Years')
+    axes.set_ylabel('Employment Rate', fontsize=14)
+    axes.set_xlabel('Years', fontsize=14)
 
     axes.set_xticks(year)
 

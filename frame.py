@@ -7,14 +7,17 @@ from ttkbootstrap.constants import *
 
 import matplotlib
 matplotlib.use('TkAgg')
+
+import pandas as pd
 from pandastable import Table
+
 from helpers.data_helper import (clean_graduate_data, get_data, get_data_by_school, drop_columns, rename_column,
                                  handle_missing_vals)
 from helpers.ui_helper import create_combobox, create_figure_canvas, show_toast
+
 from graphs.CourseBar import displayCourseBar
-from graphs.salaryPieChart import display_salary_pie
+from graphs.salaryPieChart import display_salary_pie, display_faculty_bar
 from graphs.EmploymentLine import display_emp_line
-import pandas as pd
 
 import os
 
@@ -71,44 +74,68 @@ class Window(Frame):
 
         canvas.create_window((0, 0), window=top_frame, anchor=NW)
 
+        # -------------------------------------------------Salary pie chart---------------------------------------------
+
         Label(top_frame, text="Select an institution: ").pack()
 
-        school_combo = create_combobox(top_frame, schools, 'readonly')
-        school_combo.pack()
+        pie_school_combo = create_combobox(top_frame, schools)
+        pie_school_combo.pack()
 
         sch_df = get_data_by_school(df, schools[0])
 
-        Label(top_frame, text="Select a year: ").pack()
+        Label(top_frame, text="Select a year: ").pack(pady=10)
 
-        self.year_combo = create_combobox(top_frame, sch_df['Year of Survey'].unique().tolist(), 'readonly')
-        self.year_combo.pack()
+        self.year_combo = create_combobox(top_frame, sch_df['Year of Survey'].unique().tolist())
+        self.year_combo.pack(pady=10)
 
         pie_figure, pie_axes, pie_figure_canvas = create_figure_canvas(top_frame)
 
         # pack graph into window
         pie_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
-        display_salary_pie(df, school_combo.get(), self.year_combo.get(), pie_axes)
+        self.faculty_combo = create_combobox(top_frame, sch_df['Faculty'].unique().tolist(), 50)
+        self.faculty_combo.pack(pady=10)
+
+        pie_bar_figure, pie_bar_axes, pie_bar_canvas = create_figure_canvas(top_frame)
+
+        pie_bar_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+
+        display_salary_pie(df, pie_school_combo.get(), self.year_combo.get(), pie_axes)
+        slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(), self.faculty_combo.get(),
+                                     pie_bar_axes)
 
         def pie_school_change(event):
             # Change pie chart values when school and year is selected
-            selected_school = school_combo.get()
+            # Change bars when faculty is changed
+            # TODO: set year combo initial value as years[0] without setting it everytime this func is called
+            selected_school = pie_school_combo.get()
             filtered_df = get_data_by_school(df, selected_school)
+            years = filtered_df['Year of Survey'].unique().tolist()
 
-            self.year_combo['values'] = filtered_df['Year of Survey'].unique().tolist()
-            selected_year = self.year_combo.get()
+            self.year_combo['values'] = years
 
-            if selected_year not in self.year_combo['values']:
-                selected_year = self.year_combo['values'][0]
+            self.faculty_combo['values'] = filtered_df['Faculty'].unique().tolist()
+            selected_faculty = self.faculty_combo.get()
 
-            self.year_combo.set(selected_year)
+            if selected_faculty not in self.faculty_combo['values']:
+                selected_faculty = self.faculty_combo['values'][0]
+
+            self.faculty_combo.set(selected_faculty)
 
             pie_axes.clear()
-            display_salary_pie(df, selected_school, selected_year, pie_axes)
-            pie_figure_canvas.draw()
+            pie_bar_axes.clear()
 
-        school_combo.bind('<<ComboboxSelected>>', pie_school_change)
+            display_salary_pie(df, selected_school, self.year_combo.get(), pie_axes)
+            slider = display_faculty_bar(df, selected_school, self.year_combo.get(), selected_faculty, pie_bar_axes)
+
+            pie_figure_canvas.draw()
+            pie_bar_canvas.draw()
+
+        pie_school_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.year_combo.bind('<<ComboboxSelected>>', pie_school_change)
+        self.faculty_combo.bind('<<ComboboxSelected>>', pie_school_change)
+
+        # -------------------------------------------------Salary bar comparison----------------------------------------
 
         (Label(top_frame, text='Comparison of trend of different school courses mean salary',
                font=('Arial', 24, 'bold')).pack(pady=10))
@@ -118,21 +145,21 @@ class Window(Frame):
         sch_df = get_data_by_school(df, schools[0])
 
         # Combo box for universities
-        school_combo = create_combobox(top_frame, schools, 'readonly')
+        school_combo = create_combobox(top_frame, schools)
         school_combo.pack(pady=10)
 
         # Combobox for courses in the university
-        self.course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 'readonly',
+        self.course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
                                             70)
         self.course_combo.pack(pady=10)
 
         Label(top_frame, text='Compare with: ').pack(pady=10)
 
-        compared_school_combo = create_combobox(top_frame, schools, 'readonly')
+        compared_school_combo = create_combobox(top_frame, schools)
         compared_school_combo.pack(pady=10)
 
         self.compared_course_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
-                                                     'readonly', 70)
+                                                     70)
         self.compared_course_combo.pack(pady=10)
 
         bar_figure, bar_axes, bar_figure_canvas = create_figure_canvas(top_frame)
@@ -177,12 +204,13 @@ class Window(Frame):
         self.course_combo.bind('<<ComboboxSelected>>', school_change)
         self.compared_course_combo.bind('<<ComboboxSelected>>', school_change)
 
+        # -------------------------------------------------Employment rate line graph-----------------------------------
+
         (Label(top_frame, text='Trend in employment rate in schools and courses', font=('Arial', 24, 'bold'))
          .pack(pady=10))
 
-        self.course_line_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(),
-                                                 'readonly', 70)
-        sch_line_combo = create_combobox(top_frame, schools, 'readonly')
+        self.course_line_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 70)
+        sch_line_combo = create_combobox(top_frame, schools)
 
         sch_line_combo.pack(pady=10)
         self.course_line_combo.pack(pady=10)
