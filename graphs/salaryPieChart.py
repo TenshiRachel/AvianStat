@@ -37,7 +37,8 @@ def display_faculty_bar(df, school, year, faculty, axes):
     sch_df = get_data_by_school(df, school)
     specific_year_df = sch_df.loc[sch_df['Year of Survey'] == int(year)]
 
-    courses = specific_year_df['Qualification'].unique()
+    courses = specific_year_df.loc[specific_year_df['Faculty'] == faculty, 'Qualification'].tolist()
+    salary = specific_year_df.loc[specific_year_df['Faculty'] == faculty, 'Mean Salary'].tolist()
 
     def update_bar_with_slider(pos):
         # position of slider
@@ -54,7 +55,7 @@ def display_faculty_bar(df, school, year, faculty, axes):
 
         # slices the data according to position and num of bars to display and displays it
         displayed_courses = courses[pos:pos+n]
-        displayed_salary = specific_year_df['Mean Salary'][pos:pos+n]
+        displayed_salary = salary[pos:pos+n]
 
         bars = axes.bar(displayed_courses, displayed_salary)
 
@@ -77,7 +78,9 @@ def display_faculty_bar(df, school, year, faculty, axes):
 
         axes.set_xticklabels(modified_labels)
 
-        axes.set_title(f'Average Gross Monthly Salary by Qualification for {faculty}', fontsize=16)
+        axes.set_title(f'Average Gross Monthly Salary by Qualification for {faculty} in {year}', fontsize=16)
+        if len(bars) < 1:
+            axes.set_title(f'No data for {faculty} in {year}', fontsize=16, color='red')
 
         # Adding labels with values (including "$") above the bars
         for bar in bars:

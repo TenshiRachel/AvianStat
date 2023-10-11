@@ -18,6 +18,7 @@ from helpers.ui_helper import create_combobox, create_figure_canvas, show_toast
 from graphs.CourseBar import displayCourseBar
 from graphs.salaryPieChart import display_salary_pie, display_faculty_bar
 from graphs.EmploymentLine import display_emp_line
+from graphs.EmpPieChart import display_emp_pie
 
 import os
 
@@ -28,9 +29,12 @@ class Window(Frame):
         self.parent = parent
         # Default font for menu items
         self.menu_font = Font(family='Arial', size=14)
+
         self.view_data_win = None
         self.users_data = None
         self.data_table = None
+
+        # Display UI
         self.init_ui()
 
     def init_ui(self):
@@ -93,6 +97,8 @@ class Window(Frame):
         # pack graph into window
         pie_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
+        Label(top_frame, text='Mean salaries by courses in faculty', font=('Arial', 24, 'bold')).pack(pady=10)
+
         self.faculty_combo = create_combobox(top_frame, sch_df['Faculty'].unique().tolist(), 50)
         self.faculty_combo.pack(pady=10)
 
@@ -101,13 +107,12 @@ class Window(Frame):
         pie_bar_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
         display_salary_pie(df, pie_school_combo.get(), self.year_combo.get(), pie_axes)
-        self.slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(), self.faculty_combo.get(),
-                                     pie_bar_axes)
+        self.slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(),
+                                                          self.faculty_combo.get(), pie_bar_axes)
 
         def pie_school_change(event):
             # Change pie chart values when school and year is selected
             # Change bars when faculty is changed
-            # TODO: set year combo initial value as years[0] without setting it everytime this func is called
             selected_school = pie_school_combo.get()
             filtered_df = get_data_by_school(df, selected_school)
             years = filtered_df['Year of Survey'].unique().tolist()
@@ -127,18 +132,41 @@ class Window(Frame):
             self.faculty_combo.set(selected_faculty)
             self.year_combo.set(selected_year)
 
+            # Clear axes to redraw based on selection
             pie_axes.clear()
             pie_bar_axes.clear()
+            # TODO: Remove old slider and create new slider to prevent overlap of sliders
 
             display_salary_pie(df, selected_school, self.year_combo.get(), pie_axes)
-            self.slider = display_faculty_bar(df, selected_school, self.year_combo.get(), selected_faculty, pie_bar_axes)
+            self.slider = display_faculty_bar(df, selected_school, self.year_combo.get(),
+                                                              selected_faculty, pie_bar_axes)
 
+            # Redraw the graphs
             pie_figure_canvas.draw()
             pie_bar_canvas.draw()
 
         pie_school_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.year_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.faculty_combo.bind('<<ComboboxSelected>>', pie_school_change)
+
+        # -----------------------------------------Employment rate pie chart--------------------------------------------
+        Label(top_frame, text='Distribution of employment rate by school', font=('Arial', 24, 'bold')).pack(pady=10)
+
+        pie_emp_school_combo = create_combobox(top_frame, schools)
+        pie_emp_school_combo.pack(pady=10)
+
+        pie_emp_figure, pie_emp_axes, pie_emp_canvas = create_figure_canvas(top_frame)
+
+        pie_emp_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+
+        display_emp_pie(df, pie_emp_school_combo.get(), pie_emp_axes)
+
+        def pie_emp_school_change(event):
+            pie_emp_axes.clear()
+            display_emp_pie(df, pie_emp_school_combo.get(), pie_emp_axes)
+            pie_emp_canvas.draw()
+
+        pie_emp_school_combo.bind('<<ComboboxSelected>>', pie_emp_school_change)
 
         # -------------------------------------------------Salary bar comparison----------------------------------------
 
