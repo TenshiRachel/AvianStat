@@ -26,9 +26,5 @@ def display_emp_pie(df, school, axes):
 
     )
 
-    # Add a white circle in the middle to create a donut looking chart
-    hole = plt.Circle((0, 0), 0.65, facecolor='white')
-    plt.gcf().gca().add_artist(hole)
-
     # Set title of pie chart
     axes.set_title(f'Overview of average employment Rate in {school}', fontsize=14)

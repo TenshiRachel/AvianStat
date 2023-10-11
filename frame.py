@@ -19,6 +19,7 @@ from graphs.CourseBar import displayCourseBar
 from graphs.salaryPieChart import display_salary_pie, display_faculty_bar
 from graphs.EmploymentLine import display_emp_line
 from graphs.EmpPieChart import display_emp_pie
+from graphs.EmpScatter import display_emp_scatter
 
 import os
 
@@ -78,9 +79,13 @@ class Window(Frame):
 
         canvas.create_window((0, 0), window=top_frame, anchor=NW)
 
-        # -------------------------------------------------Salary pie chart---------------------------------------------
+        (Label(top_frame, text='Analysis of graduate data for universities in Singapore', font=('Arial', 28, 'bold'))
+         .pack(pady=10))
 
-        Label(top_frame, text="Select an institution: ").pack()
+        # -------------------------------------------------Salary pie chart---------------------------------------------
+        Label(top_frame, text='Distribution of Mean salary by faculty', font=('Arial', 24, 'bold')).pack(pady=10)
+
+        Label(top_frame, text="Select an institution: ").pack(pady=10)
 
         pie_school_combo = create_combobox(top_frame, schools)
         pie_school_combo.pack()
@@ -272,7 +277,21 @@ class Window(Frame):
         self.course_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
         sch_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
 
+        # ----------------------------------------------Employment Rate scatter plot------------------------------------
+
+        Label(top_frame, text='Overview of employment rate in universities', font=('Arial', 24, 'bold')).pack(pady=10)
+
+        scatter_figure, scatter_axes, scatter_canvas = create_figure_canvas(top_frame)
+
+        scatter_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+
+        display_emp_scatter(df, scatter_axes)
+
+        # -----------------------------------------------------End of graphs--------------------------------------------
+
+        # Update items as you scroll down
         top_frame.update_idletasks()
+        # Configure canvas to be the scroll region
         canvas.config(scrollregion=canvas.bbox('all'))
 
     def refresh_table(self):

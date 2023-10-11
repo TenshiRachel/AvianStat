@@ -1,7 +1,6 @@
 from helpers.data_helper import get_data_by_school
 import matplotlib
 from matplotlib.widgets import Slider
-from textwrap import wrap
 
 
 # Create a function to generate the pie chart based on user selection
@@ -22,7 +21,7 @@ def display_salary_pie(df, school, year, axes):
     wedges, texts, autotexts = axes.pie(faculty_salary_mean, labels=faculty_salary_mean.index, autopct='%1.1f%%',
                                         startangle=140, textprops={'fontsize': 14})
 
-    axes.set_title(f'Distribution of Average Salary by Faculty at {school} ({year})', y=1.08, fontsize=16)
+    axes.set_title(f'Distribution of Mean Salary by Faculty at {school} ({year})', y=1.08, fontsize=16)
     axes.axis('equal')
 
     # Make the Faculty labels and autopct text larger
