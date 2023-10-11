@@ -101,7 +101,7 @@ class Window(Frame):
         pie_bar_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
         display_salary_pie(df, pie_school_combo.get(), self.year_combo.get(), pie_axes)
-        slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(), self.faculty_combo.get(),
+        self.slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(), self.faculty_combo.get(),
                                      pie_bar_axes)
 
         def pie_school_change(event):
@@ -113,6 +113,7 @@ class Window(Frame):
             years = filtered_df['Year of Survey'].unique().tolist()
 
             self.year_combo['values'] = years
+            selected_year = self.year_combo.get()
 
             self.faculty_combo['values'] = filtered_df['Faculty'].unique().tolist()
             selected_faculty = self.faculty_combo.get()
@@ -120,13 +121,17 @@ class Window(Frame):
             if selected_faculty not in self.faculty_combo['values']:
                 selected_faculty = self.faculty_combo['values'][0]
 
+            if selected_year not in self.year_combo['values']:
+                selected_year = self.year_combo['values'][0]
+
             self.faculty_combo.set(selected_faculty)
+            self.year_combo.set(selected_year)
 
             pie_axes.clear()
             pie_bar_axes.clear()
 
             display_salary_pie(df, selected_school, self.year_combo.get(), pie_axes)
-            slider = display_faculty_bar(df, selected_school, self.year_combo.get(), selected_faculty, pie_bar_axes)
+            self.slider = display_faculty_bar(df, selected_school, self.year_combo.get(), selected_faculty, pie_bar_axes)
 
             pie_figure_canvas.draw()
             pie_bar_canvas.draw()

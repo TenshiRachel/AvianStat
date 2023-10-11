@@ -94,6 +94,7 @@ def display_faculty_bar(df, school, year, faculty, axes):
 
     # update bar graph as slider is moved
     slider.on_changed(update_bar_with_slider)
+
     # Display initial bars
     update_bar_with_slider(0)
     return slider
