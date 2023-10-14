@@ -12,6 +12,7 @@ def main():
     except ModuleNotFoundError:
         # If user does not have dependencies, auto install
         print('Dependencies not found, installing...')
+        print('This may take some time, please wait')
         import subprocess
 
         subprocess.check_call(["pip", "install", "-r", "requirements.txt"])

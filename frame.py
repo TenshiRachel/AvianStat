@@ -253,29 +253,50 @@ class Window(Frame):
         sch_line_combo.pack(pady=10)
         self.course_line_combo.pack(pady=10)
 
+        Label(top_frame, text='Select school and course to compare').pack(pady=10)
+
+        compared_sch_line_combo = create_combobox(top_frame, schools)
+        self.compared_course_line_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 70)
+
+        compared_sch_line_combo.pack(pady=10)
+        self.compared_course_line_combo.pack(pady=10)
+
         line_figure, line_axes, line_figure_canvas = create_figure_canvas(top_frame, fig_size=(10, 6))
 
         # pack graph
         line_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
-        display_emp_line(df, school_combo.get(), self.course_line_combo.get(), line_axes)
+        display_emp_line(df, school_combo.get(), self.course_line_combo.get(), compared_sch_line_combo.get(),
+                         self.compared_course_line_combo.get(), line_axes)
 
         def line_sch_chg(event):
             selected_school = sch_line_combo.get()
+            selected_compare = compared_sch_line_combo.get()
 
             sch_line_df = get_data_by_school(df, selected_school)
             self.course_line_combo['values'] = sch_line_df['Qualification'].unique().tolist()
             selected_course = self.course_line_combo.get()
 
+            compared_sch_line_df = get_data_by_school(df, selected_compare)
+            self.compared_course_line_combo['values'] = compared_sch_line_df['Qualification'].unique().tolist()
+            selected_compare_course = self.compared_course_line_combo.get()
+
             if selected_course not in self.course_line_combo['values']:
                 selected_course = self.course_line_combo['values'][0]
+
+            if selected_compare_course not in self.compared_course_line_combo['values']:
+                selected_compare_course = self.compared_course_line_combo['values'][0]
+
             self.course_line_combo.set(selected_course)
+            self.compared_course_line_combo.set(selected_compare_course)
 
             line_axes.clear()
-            display_emp_line(df, selected_school, selected_course, line_axes)
+            display_emp_line(df, selected_school, selected_course, selected_compare, selected_compare_course, line_axes)
             line_figure_canvas.draw()
 
         self.course_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
         sch_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
+        compared_sch_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
+        self.compared_course_line_combo.bind('<<ComboboxSelected>>', line_sch_chg)
 
         # ----------------------------------------------Employment Rate scatter plot------------------------------------
 
@@ -344,7 +365,7 @@ class Window(Frame):
         frame.pack(fill=BOTH, expand=True)
 
         # Display data with pandastable
-        self.data_table = Table(frame)
+        self.data_table = Table(frame, showtoolbar=True)
         self.data_table.model.df = self.users_data
         self.data_table.cell_font = ('Arial', 20)
         self.data_table.floatprecision = 0
