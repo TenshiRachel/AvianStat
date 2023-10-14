@@ -30,4 +30,4 @@ def display_emp_scatter(df, axes):
 
     # Enable mplcursors for interactive data labels
     # This one is for the hover over label effect cos the legend too clunky
-    mplcursors.cursor(hover=True)
+    mplcursors.cursor(axes, hover=True)

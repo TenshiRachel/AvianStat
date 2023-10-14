@@ -45,6 +45,7 @@ class Window(Frame):
         height = self.parent.winfo_screenheight()
 
         self.parent.geometry('%dx%d' % (width, height))
+        # Set full screen mode for window
         self.parent.state('zoomed')
 
         # Default font for widgets
@@ -75,7 +76,7 @@ class Window(Frame):
         schools = data['Institution'].unique().tolist()
 
         top_frame = Frame(canvas)
-        top_frame.pack(fill=BOTH)
+        top_frame.pack(fill=BOTH, padx=(20, 0))
 
         canvas.create_window((0, 0), window=top_frame, anchor=NW)
 
@@ -112,6 +113,7 @@ class Window(Frame):
         pie_bar_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
         display_salary_pie(df, pie_school_combo.get(), self.year_combo.get(), pie_axes)
+        # Displays the slider
         self.slider = display_faculty_bar(df, pie_school_combo.get(), self.year_combo.get(),
                                                           self.faculty_combo.get(), pie_bar_axes)
 
@@ -127,7 +129,7 @@ class Window(Frame):
 
             self.faculty_combo['values'] = filtered_df['Faculty'].unique().tolist()
             selected_faculty = self.faculty_combo.get()
-
+            # Toggles the initial value on change of a combobox value
             if selected_faculty not in self.faculty_combo['values']:
                 selected_faculty = self.faculty_combo['values'][0]
 
@@ -140,7 +142,6 @@ class Window(Frame):
             # Clear axes to redraw based on selection
             pie_axes.clear()
             pie_bar_axes.clear()
-            # TODO: Remove old slider and create new slider to prevent overlap of sliders
 
             display_salary_pie(df, selected_school, self.year_combo.get(), pie_axes)
             self.slider = display_faculty_bar(df, selected_school, self.year_combo.get(),
@@ -150,6 +151,7 @@ class Window(Frame):
             pie_figure_canvas.draw()
             pie_bar_canvas.draw()
 
+        # Binds combobox to the function
         pie_school_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.year_combo.bind('<<ComboboxSelected>>', pie_school_change)
         self.faculty_combo.bind('<<ComboboxSelected>>', pie_school_change)
@@ -367,6 +369,7 @@ class Window(Frame):
         # Display data with pandastable
         self.data_table = Table(frame, showtoolbar=True)
         self.data_table.model.df = self.users_data
+        # Configure font size, row height of table
         self.data_table.cell_font = ('Arial', 20)
         self.data_table.floatprecision = 0
         self.data_table.rowheight = 40
@@ -375,15 +378,19 @@ class Window(Frame):
 
     def save_as_file(self):
         file_types = [('CSV files', '*.csv')]
+        # Open file dialog to save file
         file_path = filedialog.asksaveasfilename(filetypes=file_types, defaultextension=".csv")
 
         if file_path:
             try:
+                # Convert table to CSV
                 self.users_data.to_csv(file_path, index=False)
                 file_name = os.path.basename(file_path)  # Get just the file name without path
                 show_toast(f"{file_name} has been saved", SUCCESS)
+
             except Exception as e:
                 show_toast(f"Error saving data: {str(e)}", DANGER)
+
     def drop_col(self):
         # Create new window for dropping columns
         drop_col_win = Toplevel(self.view_data_win)
@@ -419,7 +426,7 @@ class Window(Frame):
             checkbox_vars.append((var, col))
             checkbox.pack()
 
-        # Update content on scoll
+        # Update content on scroll
         label_frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox('all'))
 

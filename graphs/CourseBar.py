@@ -52,6 +52,7 @@ def displayCourseBar(dataframe, school, course, other_school, other_course, axes
         # Store position of grouped bars to position x ticks
         bar_pos.append((x_pos[i]*2 + offset + compared_offset)/2)
 
+        # Create the bar and label it
         bar = axes.bar(x_pos[i] + offset, salary, width, label='%s - %s' % (school, course) if i == 0 else '',
                        color=bar_colors[i], align='center')
 
