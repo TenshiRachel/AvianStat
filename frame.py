@@ -41,16 +41,13 @@ class Window(Frame):
     def init_ui(self):
         self.parent.title('Avian Stat')
 
-        width = self.parent.winfo_screenwidth()
-        height = self.parent.winfo_screenheight()
-
-        self.parent.geometry('%dx%d' % (width, height))
         # Set full screen mode for window
         self.parent.state('zoomed')
 
         # Default font for widgets
         nametofont('TkDefaultFont').configure(size=20)
 
+        # Add menu items
         menubar = Menu(self.parent)
         self.parent.config(menu=menubar)
 
@@ -58,11 +55,15 @@ class Window(Frame):
         file_menu.add_command(label='Open...', command=self.open_file, font=self.menu_font)
         menubar.add_cascade(menu=file_menu, label='File')
 
+        # Get data and store as pandas dataframe
         data = pd.read_csv('./Universities Graduate Employment Survey.csv')
 
         data = clean_graduate_data(data)
         data.head()
         df = pd.DataFrame(data)
+
+        # Get all unique universities from data
+        schools = data['Institution'].unique().tolist()
 
         canvas = Canvas(self.parent)
         canvas.pack(fill=BOTH, expand=True)
@@ -72,8 +73,6 @@ class Window(Frame):
         scrollbar.pack(side=RIGHT, fill=Y)
 
         canvas.configure(yscrollcommand=scrollbar.set)
-
-        schools = data['Institution'].unique().tolist()
 
         top_frame = Frame(canvas)
         top_frame.pack(fill=BOTH, padx=(20, 0))
@@ -169,6 +168,7 @@ class Window(Frame):
         display_emp_pie(df, pie_emp_school_combo.get(), pie_emp_axes)
 
         def pie_emp_school_change(event):
+            # Clear and redraw graph according to university selection
             pie_emp_axes.clear()
             display_emp_pie(df, pie_emp_school_combo.get(), pie_emp_axes)
             pie_emp_canvas.draw()
@@ -308,6 +308,7 @@ class Window(Frame):
 
         scatter_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
+        # Display the scatterplot
         display_emp_scatter(df, scatter_axes)
 
         # -----------------------------------------------------End of graphs--------------------------------------------
@@ -340,6 +341,7 @@ class Window(Frame):
         self.view_data_win.title(file_name)
         self.view_data_win.state('zoomed')
 
+        # Add menu items
         menubar = Menu(self.view_data_win)
         self.view_data_win.config(menu=menubar)
 
@@ -397,6 +399,7 @@ class Window(Frame):
         drop_col_win.title('Drop columns')
         drop_col_win.geometry('500x500')
 
+        # Make window unresizable
         drop_col_win.resizable(False, False)
 
         canvas = Canvas(drop_col_win)
@@ -423,6 +426,7 @@ class Window(Frame):
             var = IntVar()
             checkbox = Checkbutton(label_frame, text=col, anchor='w', width=20,
                                    variable=var)
+            # Store the vars into list, this value tells us if checkbox is checked
             checkbox_vars.append((var, col))
             checkbox.pack()
 
@@ -448,6 +452,7 @@ class Window(Frame):
                 show_toast('Column(s) dropped successfully!', SUCCESS)
 
             else:
+                # Notify user to select a checkbox if none checked
                 show_toast('At least one column must be selected', DANGER)
 
         drop_button = ttkb.Button(label_frame, text='Drop columns', command=drop, bootstyle=SUCCESS)
@@ -534,6 +539,7 @@ class Window(Frame):
 
             # Check for blank entry
             if fill_value != '':
+                # Fill data according to users input
                 self.users_data = handle_missing_vals(self.users_data, fill_value)
                 self.refresh_table()
 
@@ -577,6 +583,7 @@ class Window(Frame):
             self.refresh_table()
 
             drop_na_win.destroy()
+            # Notify users how many rows with null dropped
             show_toast('%s rows with null dropped' % str(original_rows - self.users_data.shape[0]), SUCCESS)
 
         drop_button = ttkb.Button(label_frame, text='Drop null values', command=drop, bootstyle=SUCCESS)
