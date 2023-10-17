@@ -1,4 +1,5 @@
 import matplotlib
+import mplcursors
 from helpers.data_helper import get_data_by_school
 matplotlib.use('TkAgg')
 
@@ -33,6 +34,12 @@ def display_emp_line(df, school, course, compared_school, compared_course, axes)
 
         axes.plot(year, employ, label=course)
         axes.plot(compared_year, compared_employ, label=compared_course)
+
+        # Legend for axes
+        axes.legend(loc='lower left')
+
+        # Show values on hover
+        mplcursors.cursor(axes, hover=True)
 
     else:
         axes.set_title('Insufficient data from %s or %s to plot graph' % (course, compared_course), color='red')

@@ -6,6 +6,9 @@ import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 
 import matplotlib
+from matplotlib.backends.backend_tkagg import (
+    NavigationToolbar2Tk
+)
 matplotlib.use('TkAgg')
 
 import pandas as pd
@@ -97,7 +100,7 @@ class Window(Frame):
         self.year_combo = create_combobox(top_frame, sch_df['Year of Survey'].unique().tolist())
         self.year_combo.pack(pady=10)
 
-        pie_figure, pie_axes, pie_figure_canvas = create_figure_canvas(top_frame)
+        pie_figure, pie_axes, pie_figure_canvas, pie_frame = create_figure_canvas(top_frame)
 
         # pack graph into window
         pie_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
@@ -107,7 +110,7 @@ class Window(Frame):
         self.faculty_combo = create_combobox(top_frame, sch_df['Faculty'].unique().tolist(), 50)
         self.faculty_combo.pack(pady=10)
 
-        pie_bar_figure, pie_bar_axes, pie_bar_canvas = create_figure_canvas(top_frame)
+        pie_bar_figure, pie_bar_axes, pie_bar_canvas, pie_bar_frame = create_figure_canvas(top_frame)
 
         pie_bar_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
@@ -161,7 +164,7 @@ class Window(Frame):
         pie_emp_school_combo = create_combobox(top_frame, schools)
         pie_emp_school_combo.pack(pady=10)
 
-        pie_emp_figure, pie_emp_axes, pie_emp_canvas = create_figure_canvas(top_frame)
+        pie_emp_figure, pie_emp_axes, pie_emp_canvas, pie_emp_frame = create_figure_canvas(top_frame)
 
         pie_emp_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
@@ -202,7 +205,7 @@ class Window(Frame):
                                                      70)
         self.compared_course_combo.pack(pady=10)
 
-        bar_figure, bar_axes, bar_figure_canvas = create_figure_canvas(top_frame)
+        bar_figure, bar_axes, bar_figure_canvas, bar_frame = create_figure_canvas(top_frame)
 
         # pack graph into window
         bar_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
@@ -257,13 +260,16 @@ class Window(Frame):
 
         Label(top_frame, text='Select school and course to compare').pack(pady=10)
 
+        other_df = get_data_by_school(df, schools[1])
+
         compared_sch_line_combo = create_combobox(top_frame, schools)
-        self.compared_course_line_combo = create_combobox(top_frame, sch_df['Qualification'].unique().tolist(), 70)
+        compared_sch_line_combo.set(schools[1])
+        self.compared_course_line_combo = create_combobox(top_frame, other_df['Qualification'].unique().tolist(), 70)
 
         compared_sch_line_combo.pack(pady=10)
         self.compared_course_line_combo.pack(pady=10)
 
-        line_figure, line_axes, line_figure_canvas = create_figure_canvas(top_frame, fig_size=(10, 6))
+        line_figure, line_axes, line_figure_canvas, line_frame = create_figure_canvas(top_frame, fig_size=(10, 6))
 
         # pack graph
         line_figure_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
@@ -304,7 +310,12 @@ class Window(Frame):
 
         Label(top_frame, text='Overview of employment rate in universities', font=('Arial', 24, 'bold')).pack(pady=10)
 
-        scatter_figure, scatter_axes, scatter_canvas = create_figure_canvas(top_frame)
+        scatter_figure, scatter_axes, scatter_canvas, scatter_frame = create_figure_canvas(top_frame)
+
+        # Create toolbar for scatterplot to zoom in
+        toolbar = NavigationToolbar2Tk(scatter_canvas, scatter_frame)
+        toolbar.update()
+        toolbar.update_idletasks()
 
         scatter_canvas.get_tk_widget().pack(fill=BOTH, expand=1)
 
@@ -358,10 +369,6 @@ class Window(Frame):
         edit_menu.add_cascade(menu=handling_menu, label='Handle missing values', font=self.menu_font)
         handling_menu.add_command(label='Fill null values', command=self.fill_na, font=self.menu_font)
         handling_menu.add_command(label='Drop null value rows', command=self.drop_na, font=self.menu_font)
-
-        view_menu = Menu(menubar)
-        view_menu.add_command(label='Search', font=self.menu_font)
-        menubar.add_cascade(menu=view_menu, label='View')
 
         menubar.add_cascade(menu=edit_menu, label='Edit')
 
